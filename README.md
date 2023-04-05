@@ -1,2 +1,3 @@
 # Huff4j
-A Huffman encoding implementation in Java.
+A super-simple Huffman encoding implementation in Java. <br>
+<br>NOTE: Work In Progress
