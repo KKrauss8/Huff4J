@@ -90,11 +90,8 @@ public class HuffEncoder {
 	}
 	
 	
-	/*
-	 * Writes a character with the associated frequency to an output stream
-	 * which will be used to rebuild the tree during the decoding process.
-	 */
-	private byte[] createTreeCodeData() {
+	// Used to rebuild tree during decoding process.
+	private byte[] frequencyMappingsIntoByteArray() {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 
 		for (Map.Entry<Character, Integer> entry : frequencyMap.entrySet()) {
@@ -133,8 +130,9 @@ public class HuffEncoder {
 		return createEncodedResultFromInput(text);
 	}
 
-	public byte[] getHuffmanCodeData() {
-		return createTreeCodeData();
+	
+	public byte[] getCharFrequencyData() {
+		return frequencyMappingsIntoByteArray();
 	}
 	
 }
