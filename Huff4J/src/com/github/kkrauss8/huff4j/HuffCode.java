@@ -23,8 +23,8 @@ public class HuffCode {
 		return new HuffCode(newCode, codeLength);
 	}
 	
-	public byte[] getHuffCode() {
-		return code.toByteArray();
+	public BitSet getHuffCode() {
+		return code;
 	}
 	
 	public int getCodeLength() {

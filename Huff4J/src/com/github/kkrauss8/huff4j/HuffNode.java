@@ -31,10 +31,6 @@ public class HuffNode implements Comparable<HuffNode> {
 		return right;
 	}
 	
-	public boolean isLeaf() {
-		return left == null && right == null;
-	}
-	
 	@Override
 	public int compareTo(HuffNode o) {
 		return Integer.compare(weight, o.weight);
