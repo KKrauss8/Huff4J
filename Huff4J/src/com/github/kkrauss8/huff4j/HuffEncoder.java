@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.Queue;
 import java.util.PriorityQueue;
+import java.util.BitSet;
 
 import java.io.ByteArrayOutputStream;
 
@@ -13,104 +14,127 @@ import java.io.ByteArrayOutputStream;
  */
 public class HuffEncoder {
 	
-	private static final char NCHAR = '\0'; // Null character used to indicate internal tree node
-	private Map<Character, byte[]> codes;
+	private static final char NULL_CHAR = '\0'; // Null character used to indicate interior tree node
+
+	private Map<Character, HuffCode> huffCodeMap;
+	private Map<Character, Integer> frequencyMap;
+	private HuffNode root;
 	
-	
-	public HuffEncoder() {} // Constructor doesn't need to do anything. Still included anyway
+	public HuffEncoder() {
+		huffCodeMap = new HashMap<Character, HuffCode>();
+		frequencyMap = new HashMap<Character, Integer>();
+		root = null;
+	} 
 	
 
-	// Step 1
-	private Map<Character, Integer> createFrequencyMap(String text) {
-		Map<Character, Integer> map = new HashMap<>();
-		
+	private void createFrequencyMap(String text) {
 		for (char character : text.toCharArray()) {
-			Integer frequency = map.get(character);
-			map.put(character, frequency == null ? 1 : frequency + 1);
+			Integer frequency = frequencyMap.get(character);
+			frequencyMap.put(character, frequency == null ? 1 : frequency + 1);
 		}
-		
-		return map;
 	}
 	
 	
-	// Step 2
-	private HuffNode createHuffmanTree(Map<Character, Integer> map) {
+	private void createHuffmanTree() {
 		Queue<HuffNode> queue = new PriorityQueue<>();
 		
-		for (Map.Entry<Character, Integer> entry : map.entrySet()) {
+		// Create Leaf Nodes
+		for (Map.Entry<Character, Integer> entry : frequencyMap.entrySet()) {
 			HuffNode node = new HuffNode(entry.getKey(), entry.getValue(), null, null);
+			
 			queue.add(node);
 		}
-		
+
+		// Create Interior Nodes
 		while (queue.size() > 1) {
 			HuffNode left = queue.poll();
 			HuffNode right = queue.poll();
-			
+
 			int weight = left.getWeight() + right.getWeight();
-			HuffNode parent = new HuffNode(NCHAR, weight, left, right);
-			
+			HuffNode parent = new HuffNode(NULL_CHAR, weight, left, right);
+
 			queue.add(parent);
 		}
-		
-		return queue.poll();
+
+		root = queue.poll();
 	}
 	
 	
-	// Step 3
 	private void createHuffmanCodes(HuffNode node, HuffCode code) {
-		if (node.isLeaf()) {
-			codes.put(node.getElement(), code.getHuffCode());
+		if (node.getElement() != NULL_CHAR) {
+			huffCodeMap.put(node.getElement(), code);
+		} else {
+			createHuffmanCodes(node.getLeftChild(), code.writeBit(false));
+			createHuffmanCodes(node.getRightChild(), code.writeBit(true));
 		}
-		
-		createHuffmanCodes(node.getLeftChild(), code.writeBit(false));
-		createHuffmanCodes(node.getRightChild(), code.writeBit(true));
 	}
 	
 	
 	// Helps create the compressed result
 	private byte[] createEncodedResultFromInput(String text) {
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		BitSet output = new BitSet();
+		int outputLength = 0;
 		
 		for (char character : text.toCharArray()) {
-			byte[] bytes = codes.get(character);
-			output.writeBytes(bytes);
+			HuffCode huffCode = huffCodeMap.get(character);
+			BitSet codeData = huffCode.getHuffCode();
+			int codeLength = huffCode.getCodeLength();
+
+			for (int i = 0; i < codeLength; i++) {
+				output.set(outputLength++, codeData.get(i));
+			}
+
 		}
 		
 		return output.toByteArray();
 	}
 	
 	
-	// Creates and formats the character/huffman code association data
-	// TODO: Formatting needs to be done
+	/*
+	 * Writes a character with the associated frequency to an output stream
+	 * which will be used to rebuild the tree during the decoding process.
+	 */
 	private byte[] createTreeCodeData() {
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		
-		for (Map.Entry<Character, byte[]> entry : codes.entrySet()) {
+
+		for (Map.Entry<Character, Integer> entry : frequencyMap.entrySet()) {
 			char character = entry.getKey();
-			byte[] code = entry.getValue();
+			int frequency = entry.getValue();
 			
 			output.write(character);
-			output.writeBytes(code);
+
+			for (int i = 0; i < 4; i++) {
+				output.write(frequency);
+				frequency >>= 8;
+			}
 		}
 		
 		return output.toByteArray();
 	}
 	
 	
-	
-	public HuffEncodedResult encode(String text) {
+	public byte[] encode(String text) {
 		if (text == null) {
-			throw new IllegalArgumentException("Argument cannot be null.");
+			throw new IllegalArgumentException("String cannot be null.");
+		}
+
+		if (text.isEmpty()) {
+			throw new IllegalArgumentException("String cannot be empty");
+		}
+
+		if (text.isBlank()) {
+			throw new IllegalArgumentException("String contains no alphanumeric characters");
 		}
 		
-		Map<Character, Integer> map = createFrequencyMap(text);
-		HuffNode root = createHuffmanTree(map);
+		createFrequencyMap(text);
+		createHuffmanTree();
 		createHuffmanCodes(root, new HuffCode());
 		
-		byte[] result = createEncodedResultFromInput(text);
-		byte[] codes = createTreeCodeData();
-		
-		return new HuffEncodedResult(result, codes);
+		return createEncodedResultFromInput(text);
+	}
+
+	public byte[] getHuffmanCodeData() {
+		return createTreeCodeData();
 	}
 	
 }
