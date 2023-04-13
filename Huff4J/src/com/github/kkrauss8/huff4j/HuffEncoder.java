@@ -16,18 +16,18 @@ public class HuffEncoder {
 	
 	private static final char NULL_CHAR = '\0'; // Null character used to indicate interior tree node
 
-	private Map<Character, HuffCode> huffCodeMap;
+	private Map<Character, HuffCode> codeMap;
 	private Map<Character, Integer> frequencyMap;
 	private HuffNode root;
 	
 	public HuffEncoder() {
-		huffCodeMap = new HashMap<Character, HuffCode>();
+		codeMap = new HashMap<Character, HuffCode>();
 		frequencyMap = new HashMap<Character, Integer>();
 		root = null;
 	} 
 	
 
-	private void createFrequencyMap(String text) {
+	private void buildFrequencyMap(String text) {
 		for (char character : text.toCharArray()) {
 			Integer frequency = frequencyMap.get(character);
 			frequencyMap.put(character, frequency == null ? 1 : frequency + 1);
@@ -35,7 +35,7 @@ public class HuffEncoder {
 	}
 	
 	
-	private void createHuffmanTree() {
+	private void buildHuffmanTree() {
 		Queue<HuffNode> queue = new PriorityQueue<>();
 		
 		// Create Leaf Nodes
@@ -60,7 +60,7 @@ public class HuffEncoder {
 	}
 	
 	
-	private void createHuffmanCodes(HuffNode node, HuffCode code) {
+	private void buildHuffmanCodes(HuffNode node, HuffCode code) {
 		if (node.getElement() != NULL_CHAR) {
 			huffCodeMap.put(node.getElement(), code);
 		} else {
@@ -76,7 +76,7 @@ public class HuffEncoder {
 		int outputLength = 0;
 		
 		for (char character : text.toCharArray()) {
-			HuffCode huffCode = huffCodeMap.get(character);
+			HuffCode huffCode = codeMap.get(character);
 			BitSet codeData = huffCode.getHuffCode();
 			int codeLength = huffCode.getCodeLength();
 
@@ -123,14 +123,14 @@ public class HuffEncoder {
 			throw new IllegalArgumentException("String contains no alphanumeric characters");
 		}
 		
-		createFrequencyMap(text);
-		createHuffmanTree();
-		createHuffmanCodes(root, new HuffCode());
+		buildFrequencyMap(text);
+		buildHuffmanTree();
+		buildHuffmanCodes(root, new HuffCode());
 		
 		return createEncodedResultFromInput(text);
 	}
 
-	
+
 	public byte[] getCharFrequencyData() {
 		return frequencyMappingsIntoByteArray();
 	}
