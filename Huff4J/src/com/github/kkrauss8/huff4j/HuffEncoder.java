@@ -41,7 +41,6 @@ public class HuffEncoder {
 		// Create Leaf Nodes
 		for (Map.Entry<Character, Integer> entry : frequencyMap.entrySet()) {
 			HuffNode node = new HuffNode(entry.getKey(), entry.getValue(), null, null);
-			
 			queue.add(node);
 		}
 
